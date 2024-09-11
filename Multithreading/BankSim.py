@@ -1,26 +1,30 @@
 # Youtube Link: 
 # Sources: https://docs.python.org/3/library/threading.html#thread-local-data
 #          https://docs.python.org/3/reference/compound_stmts.html#with
+#          https://www.geeksforgeeks.org/python-using-2d-arrays-lists-the-right-way/
+#          https://www.w3schools.com/python/module_random.asp
 
 import threading
+from random import uniform
 
 class BankAccount():
-    def __init__(self, initial_balance = 0):
+    def __init__(self, name, initial_balance = 0):
         self.balance = initial_balance
         self.lock = threading.Lock()
+        self.name = "Account " + str(name)
 
     def deposit(self, amount):
         with self.lock:
-            self.balance += amount
-            print(f"Deposited: {amount}, New Balance: {self.balance}")
+            self.balance = round(self.balance + amount, 2)
+            print(f"{self.name}: Deposited:{amount: .2f}, Old Balance:{self.balance - amount: .2f}, New Balance:{self.balance: .2f}")
     
     def withdraw(self, amount):
         with self.lock:
             if  amount <= self.balance:
-                self.balance -= amount
-                print(f"Withdrew: {amount}, New Balance: {self.balance}")
+                self.balance = round(self.balance - amount, 2)
+                print(f"{self.name}: Withdrew:{amount: .2f}, Old Balance:{self.balance + amount: .2f}, New Balance:{self.balance: .2f}")
             else:
-                print(f"Not enough funds. Balance: {self.balance}")
+                print(f"{self.name}: Not enough funds to withdraw{amount: .2f}, Balance:{self.balance: .2f}")
 
 class DepositThread(threading.Thread):
     def __init__(self, account, amount):
@@ -40,24 +44,35 @@ class WithdrawThread(threading.Thread):
     def run(self):
         self.account.withdraw(self.amount)
 
-my_account = BankAccount(50)
+# Create account array
+accounts = list()
+starting_balance = range(100, 600, 100)
+for i in range(5):
+    accounts.append(BankAccount(i+1, starting_balance[i]))
 
-dt_1 = DepositThread(my_account, 20)
-wt_1 = WithdrawThread(my_account, 10)
-dt_2 = DepositThread(my_account, 20)
-wt_2 = WithdrawThread(my_account, 50)
-wt_3 = WithdrawThread(my_account, 50)
+# 2d array of deposit threads
+deposit_array = [[0 for i in range(5)] for j in range(5)]
+for i in range(5):
+     for x in range(5):
+        deposit_array[i][x] = (DepositThread(accounts[i], round(uniform(0.01, 500), 2)))
+# 2d array of withdraw threads
+withdraw_array = [[0 for i in range(5)] for j in range(5)]
+for i in range(5):
+     for x in range(5):
+        withdraw_array[i][x] = (WithdrawThread(accounts[i], round(uniform(0.01, 500), 2)))
 
-dt_1.start()
-wt_1.start()
-dt_2.start()
-wt_2.start()
-wt_3.start()
+# Start Threads
+for i in range(5):
+    for x in range(5):
+        deposit_array[i][x].start()
+        withdraw_array[i][x].start()
+# Join threads
+for i in range(5):
+    for x in range(5):
+        deposit_array[i][x].join()
+        withdraw_array[i][x].join()
 
-dt_1.join()
-wt_1.join()
-dt_2.join()
-wt_2.join()
-wt_3.join()
-
-print(f"Final Balance: {my_account.balance}")
+# prints final balance of all acounts
+print('\n')
+for i in range(5):
+    print(f"{accounts[i].name}: Final balance:{accounts[i].balance: .2f}")
