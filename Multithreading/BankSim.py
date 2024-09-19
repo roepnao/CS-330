@@ -2,20 +2,25 @@
 # Sources: https://docs.python.org/3/library/threading.html#thread-local-data
 #          https://docs.python.org/3/reference/compound_stmts.html#with
 #          https://www.geeksforgeeks.org/python-using-2d-arrays-lists-the-right-way/
+#          https://www.w3schools.com/python/ref_func_range.asp
 #          https://www.w3schools.com/python/module_random.asp
+#          https://www.linode.com/docs/guides/python-priority-queue/
 
 import threading
+from queue import PriorityQueue
 from random import uniform
 
 class BankAccount():
     def __init__(self, name, initial_balance = 0):
         self.balance = initial_balance
+        self.priority_queue = PriorityQueue()
+        self.queue_lock = threading.Lock()
         self.lock = threading.Lock()
         self.name = "Account " + str(name)
 
     def deposit(self, amount):
         with self.lock:
-            self.balance = round(self.balance + amount, 2)
+            self.balance = self.balance + amount
             print(f"{self.name}: Deposited:{amount: .2f}, Old Balance:{self.balance - amount: .2f}, New Balance:{self.balance: .2f}")
     
     def withdraw(self, amount):
@@ -26,23 +31,36 @@ class BankAccount():
             else:
                 print(f"{self.name}: Not enough funds to withdraw{amount: .2f}, Balance:{self.balance: .2f}")
 
+    def run(self):
+        with self.queue_lock:
+            if self.priority_queue.empty():
+                return
+            priority, amount = self.priority_queue.get()
+
+        if priority == 0:
+            self.deposit(amount)
+        elif priority == 1:
+            self.withdraw(amount)
+
+                
+
 class DepositThread(threading.Thread):
     def __init__(self, account, amount):
             super().__init__()
             self.account = account
-            self.amount = amount
+            self.account.priority_queue.put((0, amount))
 
     def run(self):
-        self.account.deposit(self.amount)
+        self.account.run()
 
 class WithdrawThread(threading.Thread):
     def __init__(self, account, amount):
             super().__init__()
             self.account = account
-            self.amount = amount
+            self.account.priority_queue.put((1, amount))
 
     def run(self):
-        self.account.withdraw(self.amount)
+        self.account.run()
 
 # Create account array
 accounts = list()
@@ -74,5 +92,5 @@ for i in range(5):
 
 # prints final balance of all acounts
 print('\n')
-for i in range(5):
-    print(f"{accounts[i].name}: Final balance:{accounts[i].balance: .2f}")
+for account in accounts:
+    print(f"{account.name}: Final balance:{account.balance: .2f}")
