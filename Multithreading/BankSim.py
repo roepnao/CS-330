@@ -12,19 +12,19 @@ from random import uniform
 
 class BankAccount():
     def __init__(self, name, initial_balance = 0):
+        self.name = "Account " + str(name)
         self.balance = initial_balance
         self.priority_queue = PriorityQueue()
         self.queue_lock = threading.Lock()
-        self.lock = threading.Lock()
-        self.name = "Account " + str(name)
+        self.balance_lock = threading.Lock()
 
     def deposit(self, amount):
-        with self.lock:
-            self.balance = self.balance + amount
+        with self.balance_lock:
+            self.balance = round(self.balance + amount, 2)
             print(f"{self.name}: Deposited:{amount: .2f}, Old Balance:{self.balance - amount: .2f}, New Balance:{self.balance: .2f}")
     
     def withdraw(self, amount):
-        with self.lock:
+        with self.balance_lock:
             if  amount <= self.balance:
                 self.balance = round(self.balance - amount, 2)
                 print(f"{self.name}: Withdrew:{amount: .2f}, Old Balance:{self.balance + amount: .2f}, New Balance:{self.balance: .2f}")
@@ -48,7 +48,9 @@ class DepositThread(threading.Thread):
     def __init__(self, account, amount):
             super().__init__()
             self.account = account
-            self.account.priority_queue.put((0, amount))
+            self.amount = amount
+            with self.account.queue_lock:
+                self.account.priority_queue.put((0, self.amount))
 
     def run(self):
         self.account.run()
@@ -57,40 +59,44 @@ class WithdrawThread(threading.Thread):
     def __init__(self, account, amount):
             super().__init__()
             self.account = account
-            self.account.priority_queue.put((1, amount))
+            self.amount = amount
+            with self.account.queue_lock:
+                self.account.priority_queue.put((1, self.amount))
 
     def run(self):
         self.account.run()
 
+TOTAL_ACCOUNTS = 5
+
 # Create account array
 accounts = list()
-starting_balance = range(100, 600, 100)
-for i in range(5):
+starting_balance = range(100, ((TOTAL_ACCOUNTS * 100) + 100), 100)
+for i in range(TOTAL_ACCOUNTS):
     accounts.append(BankAccount(i+1, starting_balance[i]))
 
 # 2d array of deposit threads
-deposit_array = [[0 for i in range(5)] for j in range(5)]
-for i in range(5):
-     for x in range(5):
-        deposit_array[i][x] = (DepositThread(accounts[i], round(uniform(0.01, 500), 2)))
+deposit_array = [[0 for i in range(TOTAL_ACCOUNTS)] for j in range(TOTAL_ACCOUNTS)]
+for i in range(TOTAL_ACCOUNTS):
+     for x in range(TOTAL_ACCOUNTS):
+        deposit_array[i][x] = (DepositThread(accounts[i], round(uniform(0.01, (TOTAL_ACCOUNTS * 100)), 2)))
 # 2d array of withdraw threads
-withdraw_array = [[0 for i in range(5)] for j in range(5)]
-for i in range(5):
-     for x in range(5):
+withdraw_array = [[0 for i in range(TOTAL_ACCOUNTS)] for j in range(TOTAL_ACCOUNTS)]
+for i in range(TOTAL_ACCOUNTS):
+     for x in range(TOTAL_ACCOUNTS):
         withdraw_array[i][x] = (WithdrawThread(accounts[i], round(uniform(0.01, 500), 2)))
 
 # Start Threads
-for i in range(5):
-    for x in range(5):
+for i in range(TOTAL_ACCOUNTS):
+    for x in range(TOTAL_ACCOUNTS):
         deposit_array[i][x].start()
         withdraw_array[i][x].start()
 # Join threads
-for i in range(5):
-    for x in range(5):
+for i in range(TOTAL_ACCOUNTS):
+    for x in range(TOTAL_ACCOUNTS):
         deposit_array[i][x].join()
         withdraw_array[i][x].join()
 
 # prints final balance of all acounts
-print('\n')
-for account in accounts:
-    print(f"{account.name}: Final balance:{account.balance: .2f}")
+print()
+for i in range(TOTAL_ACCOUNTS):
+    print(f"{accounts[i].name}: Final Balance:{accounts[i].balance: .2f}")
