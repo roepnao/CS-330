@@ -31,7 +31,7 @@ class BankAccount():
             else:
                 print(f"{self.name}: Not enough funds to withdraw{amount: .2f}, Balance:{self.balance: .2f}")
 
-    def run(self):
+    def update(self):
         with self.queue_lock:
             if self.priority_queue.empty():
                 return
@@ -42,31 +42,36 @@ class BankAccount():
         elif priority == 1:
             self.withdraw(amount)
 
-                
-
 class DepositThread(threading.Thread):
     def __init__(self, account, amount):
             super().__init__()
             self.account = account
             self.amount = amount
-            with self.account.queue_lock:
+
+    def queue(self):
+         with self.account.queue_lock:
                 self.account.priority_queue.put((0, self.amount))
 
     def run(self):
-        self.account.run()
+        self.queue()
+        self.account.update()
 
 class WithdrawThread(threading.Thread):
     def __init__(self, account, amount):
             super().__init__()
             self.account = account
             self.amount = amount
-            with self.account.queue_lock:
+
+    def queue(self):
+         with self.account.queue_lock:
                 self.account.priority_queue.put((1, self.amount))
 
     def run(self):
-        self.account.run()
+        self.queue()
+        self.account.update()
 
-TOTAL_ACCOUNTS = 5
+TOTAL_ACCOUNTS = 200
+THREAD_COUNT = 50
 
 # Create account array
 accounts = list()
@@ -75,24 +80,24 @@ for i in range(TOTAL_ACCOUNTS):
     accounts.append(BankAccount(i+1, starting_balance[i]))
 
 # 2d array of deposit threads
-deposit_array = [[0 for i in range(TOTAL_ACCOUNTS)] for j in range(TOTAL_ACCOUNTS)]
+deposit_array = [[0 for i in range(THREAD_COUNT)] for j in range(TOTAL_ACCOUNTS)]
 for i in range(TOTAL_ACCOUNTS):
-     for x in range(TOTAL_ACCOUNTS):
+     for x in range(THREAD_COUNT):
         deposit_array[i][x] = (DepositThread(accounts[i], round(uniform(0.01, (TOTAL_ACCOUNTS * 100)), 2)))
 # 2d array of withdraw threads
-withdraw_array = [[0 for i in range(TOTAL_ACCOUNTS)] for j in range(TOTAL_ACCOUNTS)]
+withdraw_array = [[0 for i in range(THREAD_COUNT)] for j in range(TOTAL_ACCOUNTS)]
 for i in range(TOTAL_ACCOUNTS):
-     for x in range(TOTAL_ACCOUNTS):
-        withdraw_array[i][x] = (WithdrawThread(accounts[i], round(uniform(0.01, 500), 2)))
+     for x in range(THREAD_COUNT):
+        withdraw_array[i][x] = (WithdrawThread(accounts[i], round(uniform(0.01, TOTAL_ACCOUNTS * 100), 2)))
 
 # Start Threads
 for i in range(TOTAL_ACCOUNTS):
-    for x in range(TOTAL_ACCOUNTS):
+    for x in range(THREAD_COUNT):
         deposit_array[i][x].start()
         withdraw_array[i][x].start()
 # Join threads
 for i in range(TOTAL_ACCOUNTS):
-    for x in range(TOTAL_ACCOUNTS):
+    for x in range(THREAD_COUNT):
         deposit_array[i][x].join()
         withdraw_array[i][x].join()
 
