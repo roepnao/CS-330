@@ -9,7 +9,7 @@
 import threading
 from queue import PriorityQueue
 from random import uniform
-import time
+from time import sleep
 
 class BankAccount():
     def __init__(self, name, initial_balance = 0):
@@ -45,9 +45,9 @@ class BankAccount():
 
 class DepositThread(threading.Thread):
     def __init__(self, account, amount):
-            super().__init__()
-            self.account = account
-            self.amount = amount
+        super().__init__()
+        self.account = account
+        self.amount = amount
 
     def queue(self):
          with self.account.queue_lock:
@@ -55,14 +55,14 @@ class DepositThread(threading.Thread):
 
     def run(self):
         self.queue()
-        time.sleep(0.1)
+        sleep(0.1)
         self.account.update()
 
 class WithdrawThread(threading.Thread):
     def __init__(self, account, amount):
-            super().__init__()
-            self.account = account
-            self.amount = amount
+        super().__init__()
+        self.account = account
+        self.amount = amount
 
     def queue(self):
          with self.account.queue_lock:
@@ -70,11 +70,11 @@ class WithdrawThread(threading.Thread):
 
     def run(self):
         self.queue()
-        time.sleep(0.1)
+        sleep(0.1)
         self.account.update()
 
-TOTAL_ACCOUNTS = 20
-THREAD_COUNT = 20
+TOTAL_ACCOUNTS = 25
+THREAD_COUNT = 50
 
 # Create account array
 accounts = list()
