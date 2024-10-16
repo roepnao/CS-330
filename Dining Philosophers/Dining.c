@@ -1,3 +1,12 @@
+/*
+Sources: Modern Operating Systems, Tanenbaum, pg. 167-170
+         https://www.geeksforgeeks.org/multithreading-in-c/
+         https://pubs.opengroup.org/onlinepubs/009604499/functions/pthread_mutex_lock.html
+         https://www.geeksforgeeks.org/use-posix-semaphores-c/
+
+Youtube Link: 
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,6 +29,7 @@ const char* state_to_string(int state);
 #define HUNGRY 1
 #define EATING 2
 #define HUNGER_THRESHOLD 100
+#define INCREMENT 5
 
 int running = 1;
 
@@ -109,7 +119,7 @@ void check_hunger_threshold(int i) {
 
 void think(int i) {
     pthread_mutex_lock(&mp);
-    hunger[i] += 5;
+    hunger[i] += INCREMENT;
     check_hunger_threshold(i);
     pthread_mutex_unlock(&mp);
     sleep(rand() % 3 + 1); // Sleep for 1 to 3 seconds
@@ -117,7 +127,11 @@ void think(int i) {
 
 void eat(int i) {
     pthread_mutex_lock(&mp);
-    hunger[i] -= 5;
+    hunger[i] -= INCREMENT;
+    while(hunger[i] > 75 && hunger[LEFT] < 75 && hunger[RIGHT] < 75) {
+        hunger[i] -= INCREMENT;
+        usleep(10000);
+    }
     pthread_mutex_unlock(&mp);
     sleep(rand() % 3 + 1); // Sleep for 1 to 3 seconds
 }
