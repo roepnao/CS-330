@@ -46,7 +46,7 @@ int main(void) {
 
     for(int i = 0; i < 5; i++) {
         hunger[i] = rand() % 95;
-        printf("  Philospher %d starting hunger: %d\n", i, hunger[i]);
+        printf("\t\tPhilospher %d starting hunger: %d\n\n", i, hunger[i]);
     }
     printf("\n");
 
@@ -146,17 +146,20 @@ const char* state_to_string(int state) {
 }
 
 void* print_stuff(void* nothin) {
-    printf("----------------------------------------------------------------------------------------------------");
+    sleep(2);
+    printf("----------------------------------------------------------------------------------------------------\n");
     while(running) {
         pthread_mutex_lock(&mp);
 
-        printf("\n\t\t            Philospher %d, State: %s, Hunger: %d\n\n", 0, state_to_string(state[0]), hunger[0]);
-        printf("  Philospher %d, State: %s, Hunger: %d\t\tPhilosopher %d, State: %s, Hunger: %d\n\n", 1, state_to_string(state[1]),  hunger[1], 2, state_to_string(state[2]), hunger[2]);
-        printf("  Philospher %d, State: %s, Hunger: %d\t\tPhilosopher %d, State: %s, Hunger: %d\n\n", 3, state_to_string(state[3]),  hunger[3], 4, state_to_string(state[4]), hunger[4]);
+        printf("\n\t\tPhilospher %d, State: %s, Hunger: %d\n\n", 0, state_to_string(state[0]), hunger[0]);
+        printf("\t\tPhilospher %d, State: %s, Hunger: %d\n\n", 1, state_to_string(state[1]), hunger[1]);
+        printf("\t\tPhilospher %d, State: %s, Hunger: %d\n\n", 2, state_to_string(state[2]), hunger[2]);
+        printf("\t\tPhilospher %d, State: %s, Hunger: %d\n\n", 3, state_to_string(state[3]), hunger[3]);
+        printf(" \t\tPhilospher %d, State: %s, Hunger: %d\n\n", 4, state_to_string(state[4]),  hunger[4]);
         
         pthread_mutex_unlock(&mp);
         
-        printf("----------------------------------------------------------------------------------------------------\n");
+        printf("-----------------------------------------------------------------------------------------\n");
 
         sleep(2);
     }
