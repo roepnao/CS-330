@@ -48,7 +48,7 @@ int main(void) {
         hunger[i] = rand() % 95;
         printf("\t\tPhilospher %d starting hunger: %d\n\n", i, hunger[i]);
     }
-    printf("\n");
+    sleep(3);
 
     pthread_mutex_init(&mp, NULL);
     for(int i = 0; i < 5; i++) {
@@ -146,7 +146,6 @@ const char* state_to_string(int state) {
 }
 
 void* print_stuff(void* nothin) {
-    sleep(2);
     printf("----------------------------------------------------------------------------------------------------\n");
     while(running) {
         pthread_mutex_lock(&mp);
