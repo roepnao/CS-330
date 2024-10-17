@@ -44,27 +44,30 @@ int main(void) {
 
     srand(time(NULL));
 
+    // print starting hungers
     for(int i = 0; i < 5; i++) {
         hunger[i] = rand() % 95;
         printf("\t\tPhilospher %d starting hunger: %d\n\n", i, hunger[i]);
     }
     sleep(3);
 
+    // initialize threads, mutex, and semaphores
     pthread_mutex_init(&mp, NULL);
     for(int i = 0; i < 5; i++) {
         sem_init(&forks[i], 0, 0); // initialize to 0 so philosopher must wait for forks to be available
     }
-
     for (long i = 0; i < 5; i++) {
         pthread_create(&philoph_thread[i], NULL, philosopher, (void*)i);
     }
     pthread_create(&print_thread, NULL, print_stuff, NULL);
 
+    // join threads
     for (int i = 0; i < 5; i++) {
         pthread_join(philoph_thread[i], NULL);
     }
     pthread_join(print_thread, NULL);
 
+    // destroy mutex and semaphores
     pthread_mutex_destroy(&mp);
     for(int i = 0; i < 5; i++) {
         sem_destroy(&forks[i]);
