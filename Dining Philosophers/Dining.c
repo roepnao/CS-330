@@ -4,7 +4,7 @@ Sources: Modern Operating Systems, Tanenbaum, pg. 167-170
          https://pubs.opengroup.org/onlinepubs/009604499/functions/pthread_mutex_lock.html
          https://www.geeksforgeeks.org/use-posix-semaphores-c/
 
-Youtube Link: 
+Youtube Link: https://youtu.be/e22iqxGo19w?si=gZkz19Q7xkg_Houe
 */
 
 #include <stdio.h>
