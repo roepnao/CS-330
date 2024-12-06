@@ -25,8 +25,6 @@ int main() {
     struct sockaddr_in server_addr;
     char buffer[1024];
     char board[3][3];
-    int making_move = 1;
-    int valid_move = 0;
 
     // Create socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -45,40 +43,37 @@ int main() {
     }
 
     while (1) {
-        // Receive the current board from the server and print
-        recv(sockfd, board, sizeof(board), 0);
-        printBoard(board);
+        printf("\nwaiting for board\n");
+        // Receive the current board from the server
+        recv(sockfd, (char*)board, sizeof(board), 0);
+        printBoard(board);  // Display the current board
 
-        recv(sockfd, buffer, strlen(buffer), 0);
-        printf("%s\n", buffer);
+        memset(buffer, 0, sizeof(buffer));
 
-        while (making_move) {
-            // Get move from user
-            printf("Enter your move (row and column): ");
-            fgets(buffer, sizeof(buffer), stdin);
+        printf("\nwaiting for player turn\n");
+        // Receive prompt for the player's turn
+        recv(sockfd, buffer, sizeof(buffer), 0);
+        printf("%s", buffer);
 
-            // Send the move to the server
-            send(sockfd, buffer, strlen(buffer), 0);
+        memset(buffer, 0, sizeof(buffer));
 
-            recv(sockfd, buffer, strlen(buffer), 0);
-            sscanf(buffer, "%d", &valid_move);
+        printf("\nentering move\n");
+        // Enter the move
+        printf("Enter your move (row col): ");
+        fgets(buffer, sizeof(buffer), stdin);
+        send(sockfd, buffer, strlen(buffer), 0);
 
-            if (valid_move == 1) {
-                making_move = 0;
-            }
-            else {
-                printf("Invalid Move\n");
-            }
+        memset(buffer, 0, sizeof(buffer));
 
+        printf("\nchecking for ending\n");
+        // Check if the game ended
+        recv(sockfd, buffer, sizeof(buffer), 0);
+        if (strstr(buffer, "wins") || strstr(buffer, "draw")) {
+            printf("%s", buffer);
+            break;
         }
 
-        // Check for game over conditions
-        if (strstr(buffer, "wins") != NULL || strstr(buffer, "draw") != NULL) {
-            close(sockfd);
-            return 0;
-        }
-
-        making_move = 1;
+        memset(buffer, 0, sizeof(buffer));
     }
 
     close(sockfd);

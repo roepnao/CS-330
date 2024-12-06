@@ -10,13 +10,12 @@
 #include <arpa/inet.h>
 
 #define PORT 3490
-#define BOARD_SIZE 3
 
 // Function to print the Tic Tac Toe board
-void printBoard(char board[BOARD_SIZE][BOARD_SIZE]) {
+void printBoard(char board[3][3]) {
     printf("\nCurrent Board:\n");
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
             printf("%c ", board[i][j]);
         }
         printf("\n");
@@ -24,9 +23,9 @@ void printBoard(char board[BOARD_SIZE][BOARD_SIZE]) {
 }
 
 // Function to check if a player has won
-int checkWinner(char board[BOARD_SIZE][BOARD_SIZE]) {
+int checkWinner(char board[3][3]) {
     // Check rows and columns
-    for (int i = 0; i < BOARD_SIZE; i++) {
+    for (int i = 0; i < 3; i++) {
         if ((board[i][0] == board[i][1] && board[i][1] == board[i][2] && board[i][0] != ' ') ||
             (board[0][i] == board[1][i] && board[1][i] == board[2][i] && board[0][i] != ' ')) {
             return 1;  // Player wins
@@ -41,9 +40,9 @@ int checkWinner(char board[BOARD_SIZE][BOARD_SIZE]) {
 }
 
 // Function to check if the game ended in a draw
-int checkDraw(char board[BOARD_SIZE][BOARD_SIZE]) {
-    for (int i = 0; i < BOARD_SIZE; i++) {
-        for (int j = 0; j < BOARD_SIZE; j++) {
+int checkDraw(char board[3][3]) {
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
             if (board[i][j] == ' ') {
                 return 0;  // There is an empty spot, game isn't a draw
             }
@@ -57,11 +56,11 @@ int main() {
     struct sockaddr_in server_addr, client_addr;
     socklen_t addr_size;
     char buffer[1024];
-    char board[BOARD_SIZE][BOARD_SIZE] = {{' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}};
+    char board[3][3] = {{' ', ' ', ' '}, {' ', ' ', ' '}, {' ', ' ', ' '}};
     int player_turn = 0;  // 0 for player X, 1 for player O
     int row, col;
     char player = 'X';
-    int making_move = 1;
+    int has_lost = 0;
 
     // Create socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -100,31 +99,34 @@ int main() {
 
     // Game loop
     while (1) {
+        printf("\nsending board\n");
         send(new_fd[player_turn], board, sizeof(board), 0);
 
+        memset(buffer, 0, sizeof(buffer));
+
+        printf("\nsending player turn\n");
         snprintf(buffer, sizeof(buffer), "Player %c, it's your turn.", player);
         send(new_fd[player_turn], buffer, strlen(buffer), 0);
 
-        while (making_move) {
-            recv(new_fd[player_turn], buffer, sizeof(buffer), 0);
-            sscanf(buffer, "%d %d", &row, &col);
+        printf("\nwaiting for player move\n");
+        recv(new_fd[player_turn], buffer, sizeof(buffer), 0);
+        sscanf(buffer, "%d %d", &row, &col);
 
-            if (row < 0 || row >= BOARD_SIZE || col < 0 || col >= BOARD_SIZE || board[row][col] != ' ') {
-                snprintf(buffer, sizeof(buffer), "0");
-                send(new_fd[player_turn], buffer, strlen(buffer), 0);
-            }
-            else {
-                snprintf(buffer, sizeof(buffer), "1");
-                send(new_fd[player_turn], buffer, strlen(buffer), 0);
-                making_move = 0;
-            }
+        memset(buffer, 0, sizeof(buffer));
+
+        printf("\n checking valid move\n");
+        if (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != ' ') {
+            // snprintf(buffer, sizeof(buffer), "Invalid move, try again.\n");
+            // send(new_fd[player_turn], buffer, strlen(buffer), 0);
+            continue;
         }
 
+        printf("\nmaking  move\n");
         // Make the move
         board[row][col] = player;
         printBoard(board);
-        send(new_fd[player_turn], board, sizeof(board), 0);
 
+        printf("\nchecking for ending\n");
         // Check if the game has a winner
         if (checkWinner(board)) {
             snprintf(buffer, sizeof(buffer), "Player %c wins!\n", player);
@@ -132,20 +134,25 @@ int main() {
             send(new_fd[1], buffer, strlen(buffer), 0);
             break;
         }
-
         // Check if it's a draw
-        if (checkDraw(board)) {
+        else if (checkDraw(board)) {
             snprintf(buffer, sizeof(buffer), "It's a draw!\n");
             send(new_fd[0], buffer, strlen(buffer), 0);
             send(new_fd[1], buffer, strlen(buffer), 0);
             break;
         }
+        else {
+            snprintf(buffer, sizeof(buffer), " ");
+            send(new_fd[0], buffer, strlen(buffer), 0);
+            send(new_fd[1], buffer, strlen(buffer), 0);
+        }
 
+        printf("\nswitching player turn\n");
         // Switch player turn
         player = (player == 'X') ? 'O' : 'X';
         player_turn = (player_turn + 1) % 2;
-        
-        making_move = 1;
+
+        memset(buffer, 0, sizeof(buffer));
     }
 
     close(new_fd[0]);
@@ -154,4 +161,3 @@ int main() {
 
     return 0;
 }
-
