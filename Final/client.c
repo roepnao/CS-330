@@ -50,9 +50,15 @@ int main() {
 
         memset(buffer, 0, sizeof(buffer));
 
+        
+
         printf("\nwaiting for player turn\n");
         // Receive prompt for the player's turn
         recv(sockfd, buffer, sizeof(buffer), 0);
+        if (strstr(buffer, "wins") || strstr(buffer, "draw")) {
+            printf("%s", buffer);
+            break;
+        }
         printf("%s", buffer);
 
         memset(buffer, 0, sizeof(buffer));

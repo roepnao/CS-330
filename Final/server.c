@@ -61,6 +61,7 @@ int main() {
     int row, col;
     char player = 'X';
     int has_lost = 0;
+    int is_draw = 0;
 
     // Create socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -104,6 +105,17 @@ int main() {
 
         memset(buffer, 0, sizeof(buffer));
 
+        if (has_lost) {
+            snprintf(buffer, sizeof(buffer), "Player %c wins :(\n", (player == 'X') ? 'O' : 'X');
+            send(new_fd[player_turn], buffer, strlen(buffer), 0);
+            break;
+        }
+        else if (is_draw) {
+            snprintf(buffer, sizeof(buffer), "It's a draw!\n");
+            send(new_fd[player_turn], buffer, strlen(buffer), 0);
+            break;
+        }
+
         printf("\nsending player turn\n");
         snprintf(buffer, sizeof(buffer), "Player %c, it's your turn.", player);
         send(new_fd[player_turn], buffer, strlen(buffer), 0);
@@ -130,21 +142,20 @@ int main() {
         // Check if the game has a winner
         if (checkWinner(board)) {
             snprintf(buffer, sizeof(buffer), "Player %c wins!\n", player);
-            send(new_fd[0], buffer, strlen(buffer), 0);
-            send(new_fd[1], buffer, strlen(buffer), 0);
-            break;
+            send(new_fd[player_turn], buffer, strlen(buffer), 0);
+            has_lost = 1;
+            // break;
         }
         // Check if it's a draw
         else if (checkDraw(board)) {
             snprintf(buffer, sizeof(buffer), "It's a draw!\n");
-            send(new_fd[0], buffer, strlen(buffer), 0);
-            send(new_fd[1], buffer, strlen(buffer), 0);
-            break;
+            send(new_fd[player_turn], buffer, strlen(buffer), 0);
+            is_draw = 1;
+            // break;
         }
         else {
             snprintf(buffer, sizeof(buffer), " ");
-            send(new_fd[0], buffer, strlen(buffer), 0);
-            send(new_fd[1], buffer, strlen(buffer), 0);
+            send(new_fd[player_turn], buffer, strlen(buffer), 0);
         }
 
         printf("\nswitching player turn\n");
