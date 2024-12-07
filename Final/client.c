@@ -25,6 +25,7 @@ int main() {
     struct sockaddr_in server_addr;
     char buffer[1024];
     char board[3][3];
+    int checking = 1;
 
     // Create socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -42,18 +43,22 @@ int main() {
         exit(1);
     }
 
+    system("clear");
+
+    printf("Please wait for your turn.\n");
+
     while (1) {
-        printf("\nwaiting for board\n");
+        
         // Receive the current board from the server
         recv(sockfd, (char*)board, sizeof(board), 0);
-        printBoard(board);  // Display the current board
+
+        system("clear");
+
+        printBoard(board);
 
         memset(buffer, 0, sizeof(buffer));
 
-        
-
-        printf("\nwaiting for player turn\n");
-        // Receive prompt for the player's turn
+        // Receive prompt for the player's turn or game ended
         recv(sockfd, buffer, sizeof(buffer), 0);
         if (strstr(buffer, "wins") || strstr(buffer, "draw")) {
             printf("%s", buffer);
@@ -63,21 +68,47 @@ int main() {
 
         memset(buffer, 0, sizeof(buffer));
 
-        printf("\nentering move\n");
         // Enter the move
         printf("Enter your move (row col): ");
         fgets(buffer, sizeof(buffer), stdin);
         send(sockfd, buffer, strlen(buffer), 0);
 
+        while (checking) {
+            memset(buffer, 0, sizeof(buffer));
+
+            recv(sockfd, buffer, sizeof(buffer), 0);
+            if (strstr(buffer, "Invalid")) {
+                printf("%s", buffer);
+
+                memset(buffer, 0, sizeof(buffer));
+
+                printf("Enter your move (row col): ");
+                fgets(buffer, sizeof(buffer), stdin);
+                send(sockfd, buffer, strlen(buffer), 0);
+            }
+            else {
+                checking = 0;
+            }
+        }
+
         memset(buffer, 0, sizeof(buffer));
 
-        printf("\nchecking for ending\n");
+        system("clear");
+        
+        recv(sockfd, (char*)board, sizeof(board), 0);
+        printBoard(board);
+
         // Check if the game ended
         recv(sockfd, buffer, sizeof(buffer), 0);
         if (strstr(buffer, "wins") || strstr(buffer, "draw")) {
             printf("%s", buffer);
             break;
         }
+        else {
+            printf("%s", buffer);
+        }
+
+        checking = 1;
 
         memset(buffer, 0, sizeof(buffer));
     }

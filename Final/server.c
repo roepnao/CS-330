@@ -62,6 +62,7 @@ int main() {
     char player = 'X';
     int has_lost = 0;
     int is_draw = 0;
+    int checking = 1;
 
     // Create socket
     if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -100,7 +101,7 @@ int main() {
 
     // Game loop
     while (1) {
-        printf("\nsending board\n");
+        // send the board
         send(new_fd[player_turn], board, sizeof(board), 0);
 
         memset(buffer, 0, sizeof(buffer));
@@ -116,52 +117,64 @@ int main() {
             break;
         }
 
-        printf("\nsending player turn\n");
-        snprintf(buffer, sizeof(buffer), "Player %c, it's your turn.", player);
+        snprintf(buffer, sizeof(buffer), "Player %c, it's your turn.\n", player);
         send(new_fd[player_turn], buffer, strlen(buffer), 0);
 
-        printf("\nwaiting for player move\n");
         recv(new_fd[player_turn], buffer, sizeof(buffer), 0);
         sscanf(buffer, "%d %d", &row, &col);
 
         memset(buffer, 0, sizeof(buffer));
 
-        printf("\n checking valid move\n");
-        if (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != ' ') {
-            // snprintf(buffer, sizeof(buffer), "Invalid move, try again.\n");
-            // send(new_fd[player_turn], buffer, strlen(buffer), 0);
-            continue;
+        while (checking) {
+            memset(buffer, 0, sizeof(buffer));
+            if (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != ' ') {
+                snprintf(buffer, sizeof(buffer), "Invalid move, try again.\n");
+                send(new_fd[player_turn], buffer, strlen(buffer), 0);
+
+                memset(buffer, 0, sizeof(buffer));
+
+                recv(new_fd[player_turn], buffer, sizeof(buffer), 0);
+                sscanf(buffer, "%d %d", &row, &col);
+            }
+            else {
+                snprintf(buffer, sizeof(buffer), " ");
+                send(new_fd[player_turn], buffer, strlen(buffer), 0);
+                checking = 0;
+            }
         }
 
-        printf("\nmaking  move\n");
+        memset(buffer, 0, sizeof(buffer));
+
+        system("clear");
+        
         // Make the move
         board[row][col] = player;
         printBoard(board);
 
-        printf("\nchecking for ending\n");
+        memset(buffer, 0, sizeof(buffer));
+        send(new_fd[player_turn], board, sizeof(board), 0);
+
         // Check if the game has a winner
         if (checkWinner(board)) {
             snprintf(buffer, sizeof(buffer), "Player %c wins!\n", player);
             send(new_fd[player_turn], buffer, strlen(buffer), 0);
             has_lost = 1;
-            // break;
         }
         // Check if it's a draw
         else if (checkDraw(board)) {
             snprintf(buffer, sizeof(buffer), "It's a draw!\n");
             send(new_fd[player_turn], buffer, strlen(buffer), 0);
             is_draw = 1;
-            // break;
         }
         else {
-            snprintf(buffer, sizeof(buffer), " ");
+            snprintf(buffer, sizeof(buffer), "Please wait for your turn.\n");
             send(new_fd[player_turn], buffer, strlen(buffer), 0);
         }
 
-        printf("\nswitching player turn\n");
         // Switch player turn
         player = (player == 'X') ? 'O' : 'X';
         player_turn = (player_turn + 1) % 2;
+        checking = 1;
 
         memset(buffer, 0, sizeof(buffer));
     }
