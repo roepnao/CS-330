@@ -1,5 +1,11 @@
 /*
-    Why TCP? - 
+    Why TCP? - Reliable connection is more desirable for a game
+               where speed is not important such as tic tac toe, 
+               it's more important to ensure player's moves are
+               received and sent correctly rather than as fast as possible.
+
+    Sources - https://beej.us/guide/bgnet/html/split/client-server-background.html
+              https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,13 +17,12 @@
 #define PORT 3490
 
 void printBoard(char board[3][3]) {
-    printf("\nCurrent Board:\n");
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            printf("%c ", board[i][j]);
-        }
-        printf("\n");
-    }
+    printf("\nCurrent Board:\n\n");
+    printf(" %c | %c | %c\n", board[0][0], board[0][1], board[0][2]);
+    printf("---|---|---\n");
+    printf(" %c | %c | %c\n", board[1][0], board[1][1], board[1][2]);
+    printf("---|---|---\n");
+    printf(" %c | %c | %c\n\n", board[2][0], board[2][1], board[2][2]);
 }
 
 int main() {
@@ -78,6 +83,9 @@ int main() {
 
             recv(sockfd, buffer, sizeof(buffer), 0);
             if (strstr(buffer, "Invalid")) {
+                system("clear");
+                printBoard(board);
+
                 printf("%s", buffer);
 
                 memset(buffer, 0, sizeof(buffer));

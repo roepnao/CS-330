@@ -1,5 +1,11 @@
 /*
-    Why TCP? - 
+    Why TCP? - Reliable connection is more desirable for a game
+               where speed is not important such as tic tac toe, 
+               it's more important to ensure player's moves are
+               received and sent correctly rather than as fast as possible.
+
+    Sources - https://beej.us/guide/bgnet/html/split/client-server-background.html
+              https://www.geeksforgeeks.org/tcp-server-client-implementation-in-c/
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,13 +19,12 @@
 
 // Function to print the Tic Tac Toe board
 void printBoard(char board[3][3]) {
-    printf("\nCurrent Board:\n");
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 3; j++) {
-            printf("%c ", board[i][j]);
-        }
-        printf("\n");
-    }
+    printf("\nCurrent Board:\n\n");
+    printf(" %c | %c | %c\n", board[0][0], board[0][1], board[0][2]);
+    printf("---|---|---\n");
+    printf(" %c | %c | %c\n", board[1][0], board[1][1], board[1][2]);
+    printf("---|---|---\n");
+    printf(" %c | %c | %c\n\n", board[2][0], board[2][1], board[2][2]);
 }
 
 // Function to check if a player has won
@@ -86,6 +91,8 @@ int main() {
         exit(1);
     }
 
+    system("clear");
+
     printf("Server is waiting for connections...\n");
 
     // Accept two clients
@@ -99,6 +106,10 @@ int main() {
         printf("Client %d connected\n", i + 1);
     }
 
+    system("clear");
+
+    printf("Waiting for the first move.\n");
+
     // Game loop
     while (1) {
         // send the board
@@ -109,11 +120,13 @@ int main() {
         if (has_lost) {
             snprintf(buffer, sizeof(buffer), "Player %c wins :(\n", (player == 'X') ? 'O' : 'X');
             send(new_fd[player_turn], buffer, strlen(buffer), 0);
+            printf("Player %c wins!\n", (player == 'X') ? 'O' : 'X');
             break;
         }
         else if (is_draw) {
             snprintf(buffer, sizeof(buffer), "It's a draw!\n");
             send(new_fd[player_turn], buffer, strlen(buffer), 0);
+            printf("It's a draw!\n");
             break;
         }
 
